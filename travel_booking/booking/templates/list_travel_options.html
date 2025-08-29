@@ -1,0 +1,70 @@
+
+{% extends 'base.html' %}
+{% block content %}
+<h3>Available Travel Options</h3>
+<form method="get" class="row g-2 position-relative mb-3">
+  <div class="col-md-2">{{ form.type }}</div>
+  <div class="col-md-3">{{ form.source }}</div>
+  <div class="col-md-3 position-relative">
+    {{ form.destination }}
+    <div id="suggestions" class="suggestion-list d-none"></div>
+  </div>
+  <div class="col-md-2">{{ form.date }}</div>
+  <div class="col-md-2"><button class="btn btn-outline-primary w-100">Filter</button></div>
+</form>
+
+<table class="table table-striped">
+  <thead><tr><th>Type</th><th>From</th><th>To</th><th>Departure</th><th>Price</th><th>Seats</th><th></th></tr></thead>
+  <tbody>
+    {% for t in page_obj %}
+      <tr>
+        <td>{{ t.type }}</td>
+        <td>{{ t.source }}</td>
+        <td>{{ t.destination }}</td>
+        <td>{{ t.date_time|date:"D, d M Y H:i" }}</td>
+        <td>₹{{ t.price }}</td>
+        <td>{{ t.available_seats }}</td>
+        <td><a class="btn btn-sm btn-primary" href="{% url 'book_travel' t.travel_id %}">Book</a></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7" class="text-center">No options found.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<nav aria-label="Page navigation">
+  <ul class="pagination">
+    {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{page_obj.previous_page_number}}{% if request.GET.type %}&type={{request.GET.type}}{% endif %}">Previous</a></li>{% endif %}
+    <li class="page-item disabled"><span class="page-link">Page {{page_obj.number}} of {{page_obj.paginator.num_pages}}</span></li>
+    {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{page_obj.next_page_number}}">Next</a></li>{% endif %}
+  </ul>
+</nav>
+
+<script>
+const destInput = document.querySelector('input[name="destination"]');
+const suggestionsBox = document.getElementById('suggestions');
+if(destInput){
+  destInput.addEventListener('input', async (e)=>{
+    const q = e.target.value;
+    if(!q) { suggestionsBox.classList.add('d-none'); return; }
+    const res = await fetch(`/travels/suggest/?q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    suggestionsBox.innerHTML = '';
+    if(data.suggestions && data.suggestions.length){
+      data.suggestions.forEach(s => {
+        const div = document.createElement('div');
+        div.className = 'suggestion-item';
+        div.innerText = s;
+        div.addEventListener('click', ()=>{ destInput.value = s; suggestionsBox.classList.add('d-none'); });
+        suggestionsBox.appendChild(div);
+      });
+      suggestionsBox.classList.remove('d-none');
+    } else {
+      suggestionsBox.classList.add('d-none');
+    }
+  });
+  document.addEventListener('click', (e)=>{ if(!suggestionsBox.contains(e.target) && e.target !== destInput) suggestionsBox.classList.add('d-none'); });
+}
+</script>
+
+{% endblock %}

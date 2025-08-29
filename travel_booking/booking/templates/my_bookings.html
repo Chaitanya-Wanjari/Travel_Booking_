@@ -1,0 +1,44 @@
+
+{% extends 'base.html' %}
+{% block content %}
+<h3>My Bookings</h3>
+<table class="table table-hover mt-3">
+<thead>
+  <tr>
+    <th>ID</th><th>Trip</th><th>Seats</th><th>Total</th>
+    <th>Status</th><th>Date</th><th></th>
+  </tr>
+</thead>
+<tbody>
+{% for b in bookings %}
+  <tr>
+    <td>{{ b.booking_id }}</td>
+    <td>
+      {{ b.travel_option.type }} {{ b.travel_option.source }}→{{ b.travel_option.destination }}
+      ({{ b.travel_option.date_time|date:"D, d M Y H:i" }})
+    </td>
+    <td>{{ b.number_of_seats }}</td>
+    <td>₹{{ b.total_price }}</td>
+    <td>
+      {% if b.status == 'Confirmed' %}
+        <span class="badge bg-success">Confirmed</span>
+      {% else %}
+        <span class="badge bg-secondary">Cancelled</span>
+      {% endif %}
+    </td>
+    <td>{{ b.booking_date|date:"D, d M Y H:i" }}</td>
+    <td>
+      {% if b.status == 'Confirmed' %}
+        <form method="post" action="{% url 'cancel_booking' b.booking_id %}">
+          {% csrf_token %}
+          <button class="btn btn-sm btn-outline-danger">Cancel</button>
+        </form>
+      {% endif %}
+    </td>
+  </tr>
+{% empty %}
+  <tr><td colspan="7" class="text-center">No bookings yet.</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% endblock %}
